@@ -3,9 +3,14 @@
 import os
 import xml.etree.ElementTree as ET
 import urllib
+#import urllib.request
 import platform
 import re
 import config
+import cgi
+
+moviedb = 'http://private-dc013f25e-themoviedb.apiary-mock.com/3/search/movie'
+# moviedb = 'http://api.themoviedb.org/3/search/movie'
 
 for myth_dir in config.mythtv_recording_directories[:]:
     if os.path.exists(myth_dir) is not True:
@@ -55,15 +60,28 @@ for program in root.iter('Program'):
         else:
             lib.append(ep_id)
 
-    # Plex doesn't do specials
+    # Handle specials, movies, etc.
     if ep_season == '00' and ep_num == '00':
-        if (ep_airdate is None):
-            continue
-        else:
+        #Fallback 1: Check TheMovieDB
+        moviedb_successful = False
+        moviedb_run = False
+        if (config.moviedb_enabled):
+            print ("Querying TheMovieDB")
+            headers = {
+                'api_key': config.moviedb_api_key,
+                'query': cgi.escape(program.find('Title').text)
+            }
+            moviedb_request = urllib.request.Request(moviedb, headers)
+            moviedb_response = urllib.urlopen(moviedb_request).read()
+            print moviedb_response
+        if (ep_airdate is not None and moviedb_run is True and
+                moviedb_successful is False):
             episode_name = title + " - " + ep_airdate
+        else:
+            continue
 
     # Symlink path
-    link_path = (config.plex_library_directory +
+    link_path = (config.plex_tv_directory +
                  title + separator + episode_name + ep_file_extension)
 
     # Watch for oprhaned recordings!
@@ -83,9 +101,9 @@ for program in root.iter('Program'):
         print "Symlink " + link_path + " already exists.  Skipping."
         continue
 
-    if not os.path.exists(config.plex_library_directory + title):
+    if not os.path.exists(config.plex_tv_directory + title):
         print "Show folder does not exist, creating."
-        os.makedirs(config.plex_library_directory + title)
+        os.makedirs(config.plex_tv_directory + title)
 
     print "Linking " + source_path + " ==> " + link_path
     os.symlink(source_path, link_path)

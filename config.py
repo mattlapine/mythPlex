@@ -5,7 +5,13 @@ host_url = "localhost"
 host_port = "6544"
 
 # Path to the location of links
-plex_library_directory = "~/TV Shows/"
+plex_tv_directory = "~/TV Shows/"
+plex_movie_directory = "~/Movies/"
+plex_specials_directory = "~/TV Shows/Specials/"
 
 # A list of the mythTV recording directories.
 mythtv_recording_directories = ["/var/media/disk1/Recordings/"]
+
+# TheMovieDB Setup
+moviedb_enabled = False
+moviedb_api_key = ""
