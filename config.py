@@ -12,6 +12,11 @@ plex_specials_directory = "~/TV Shows/Specials/"
 # A list of the mythTV recording directories.
 mythtv_recording_directories = ["/var/media/disk1/Recordings/"]
 
-# TheMovieDB Setup
 moviedb_enabled = False
 moviedb_api_key = ""
+
+avconv_enabled = False
+avconv_bitrate = "8300k"
+avconv_mythcommflag_enabled = False
+avconv_audio_offset_enabled = False
+avconv_audio_offset_time = 0.2

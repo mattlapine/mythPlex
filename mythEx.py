@@ -3,27 +3,35 @@
 import os
 import xml.etree.ElementTree as ET
 import urllib
-#import urllib.request
 import platform
 import re
 import config
-import cgi
+from MythTV.tmdb3 import searchMovie
+from MythTV.tmdb3 import set_key
 
-moviedb = 'http://private-dc013f25e-themoviedb.apiary-mock.com/3/search/movie'
-# moviedb = 'http://api.themoviedb.org/3/search/movie'
+avconv_deinterlace = False
+avconv_size = "hd1080"
+avconv_audiocodec = "copy"
+avconv_audiobitrate = "192k"
+avconv_audiofrequency = "48000"
+avconv_audiochannels = 6
+avconv_audiostream = 1.0
+avconv_filetype = "mp4"
+avconv_threads = 2
+avconv_nicevalue = 17
+avconv_videocodec = "libx264"
+avconv_videobitrate = config.avconv_bitrate
 
-for myth_dir in config.mythtv_recording_directories[:]:
-    if os.path.exists(myth_dir) is not True:
-        print myth_dir + " is not a valid path.  Aborting"
-        quit()
+if config.moviedb_enabled:
+    set_key(config.moviedb_api_key)
 
 if platform.system() == "Windows":
     separator = "\\"
 else:
     separator = "/"
 
-if os.path.isfile('library') or os.path.islink('library'):
-    library = open('library', 'r')
+if os.path.isfile('.library') or os.path.islink('library'):
+    library = open('.library', 'r')
     lib = re.split(",", library.read())
     library.close()
 else:
@@ -66,14 +74,17 @@ for program in root.iter('Program'):
         moviedb_successful = False
         moviedb_run = False
         if (config.moviedb_enabled):
-            print ("Querying TheMovieDB")
-            headers = {
-                'api_key': config.moviedb_api_key,
-                'query': cgi.escape(program.find('Title').text)
-            }
-            moviedb_request = urllib.request.Request(moviedb, headers)
-            moviedb_response = urllib.urlopen(moviedb_request).read()
-            print moviedb_response
+            print "Querying TheMovieDB for " + title
+            res = searchMovie(title)
+            if (len(res) is 0):
+                moviedb_successful = False
+                print "Could not look up from TheMovieDB"
+            else:
+                moviedb_successful = True
+                print (res[0].title)
+                title = re.sub('[\[\]/\\;><&*%=+@!#^()|?]', '_', res[0].title)
+                episode_name = title
+        #Fallback 2: Air date
         if (ep_airdate is not None and moviedb_run is True and
                 moviedb_successful is False):
             episode_name = title + " - " + ep_airdate
@@ -113,6 +124,6 @@ outstring = ""
 for item in lib:
     outstring += item + ","
 
-library = open('library', 'w')
+library = open('.library', 'w')
 library.write(outstring)
 library.close()
